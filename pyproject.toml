@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "sql-ai-agent"
+version = "0.1.0"
+description = "SQL DB AI Agent"
+authors = ["Abhyuday Luthra"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+faker = "^36.1.1"
+langchain = "^0.3.18"
+openai = "^1.0.0"
+python-dotenv = "^1.0.0"
+langchain-community = "^0.3.17"
+langgraph = "^0.3.4"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
