@@ -1,16 +1,20 @@
 import os
+from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic.dataclasses import dataclass
 from typing import Optional
 
 
 @dataclass
-class OrchestratorResponse:
-    """
-    Defines the structured response format for the orchestrator.
-    """
-    decision: str
-    follow_up_question: Optional[str] = None
+class OrchestratorResponse(BaseModel):
+    """Defines the structured response format for the orchestrator."""
+    decision: str = Field(
+        description="The next step in the workflow. Must be one of: 'analyst', 'postgresql_writer', 'postgresql_checker', 'executor', 'follow_up', or 'complete'."
+    )
+    follow_up_question: Optional[str] = Field(
+        default=None,
+        description="A question to ask the user if more information is needed (only used if decision is 'follow_up').",
+    )
 
 
 # Define the orchestrator agent
