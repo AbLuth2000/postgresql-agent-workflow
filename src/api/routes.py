@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from src.core.workflow import workflow  # Import LangGraph workflow
+from src.core.workflow import workflow, AgentState  # Import LangGraph workflow
 
 router = APIRouter()
 
@@ -11,20 +11,15 @@ class AgentResponse(BaseModel):
     next_agent: str
     response: dict
 
-@router.post("/query", response_model=AgentResponse)
-def process_request(request: UserRequest):
-    """
-    Processes a user query and returns the response from the agentic workflow.
-    """
+@router.post("/process", response_model=AgentResponse)
+async def process_request(request: UserRequest):
+    # Initialize the state with user input
+    state = AgentState(user_input=request.input_text, next_agent="orchestrator", response={})
+    # Execute the workflow
     try:
-        state = {"user_input": request.user_input}
-        for result in workflow.stream(state):
-            if "next_agent" in result:
-                return AgentResponse(next_agent=result["next_agent"], response=result)
-        raise HTTPException(status_code=500, detail="Workflow did not return a valid response.")
+        final_state = await workflow.run(state)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/")
-def health_check():
-    return {"status": "ok", "message": "Agentic Workflow API is running."}
+    # Extract the response from the final state
+    output_text = final_state.response.get('result', 'No response generated.')
+    return AgentResponse(output_text=output_text)

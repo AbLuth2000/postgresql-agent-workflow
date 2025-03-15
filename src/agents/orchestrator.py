@@ -4,8 +4,10 @@ from pydantic_ai import Agent, RunContext
 from pydantic.dataclasses import dataclass
 from typing import Optional
 
+# Load model name for analysis
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 
-@dataclass
+
 class OrchestratorResponse(BaseModel):
     """Defines the structured response format for the orchestrator."""
     decision: str = Field(
@@ -19,7 +21,7 @@ class OrchestratorResponse(BaseModel):
 
 # Define the orchestrator agent
 OrchestratorAgent = Agent(
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL"),
+    OPENAI_MODEL,
     deps_type=str,  # User input as dependency
     result_type=OrchestratorResponse,  # Enforce structured output
     system_prompt="""
@@ -43,8 +45,8 @@ OrchestratorAgent = Agent(
 
 
 @OrchestratorAgent.tool
-async def route_request(ctx: RunContext[str], user_input: str) -> OrchestratorResponse:
+async def route_request(ctx: RunContext[str]) -> OrchestratorResponse:
     """
     Routes the user's request to the appropriate agent.
     """
-    return await OrchestratorAgent.run(user_input, deps=user_input)
+    return await OrchestratorAgent.invoke(ctx.deps)
