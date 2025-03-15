@@ -25,7 +25,7 @@ class PostgreSQLCheckerResponse(BaseModel):
 
 
 # Define the PostgreSQL Checker agent
-postgresql_checker_agent = Agent(
+PostgreSQLCheckerAgent = Agent(
     OPENAI_MODEL,
     deps_type=PostgreSQLCheckerDependencies,  # Dependencies (query, request, schema)
     result_type=PostgreSQLCheckerResponse,  # Structured output
@@ -56,9 +56,9 @@ postgresql_checker_agent = Agent(
 )
 
 
-@postgresql_checker_agent.tool
+@PostgreSQLCheckerAgent.tool
 async def validate_query(ctx: RunContext[PostgreSQLCheckerDependencies], deps: PostgreSQLCheckerDependencies) -> PostgreSQLCheckerResponse:
     """
     Validates the SQL query by checking if it fulfills the user's request and conforms to PostgreSQL syntax.
     """
-    return await postgresql_checker_agent.run(deps.user_request, deps=deps)
+    return await PostgreSQLCheckerAgent.run(deps.user_request, deps=deps)

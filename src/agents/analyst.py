@@ -23,7 +23,7 @@ class AnalystResponse(BaseModel):
 
 
 # Define the Analyst agent
-analyst_agent = Agent(
+AnalystAgent = Agent(
     OPENAI_MODEL,
     deps_type=AnalystDependencies,  # Dependencies (query results)
     result_type=AnalystResponse,  # Structured output
@@ -51,9 +51,9 @@ analyst_agent = Agent(
 )
 
 
-@analyst_agent.tool
+@AnalystAgent.tool
 async def analyze_request(ctx: RunContext[AnalystDependencies], deps: AnalystDependencies) -> AnalystResponse:
     """
     Analyzes query results and provides insights.
     """
-    return await analyst_agent.run(deps.user_request, deps=deps)
+    return await AnalystAgent.run(deps.user_request, deps=deps)

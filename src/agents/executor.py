@@ -30,7 +30,7 @@ class ExecutorResponse(BaseModel):
 
 
 # Define the Executor agent
-executor_agent = Agent(
+ExecutorAgent = Agent(
     OPENAI_MODEL,
     deps_type=ExecutorDependencies,  # Dependencies (SQL query)
     result_type=ExecutorResponse,  # Structured output
@@ -75,7 +75,7 @@ def run_query(query: str) -> ExecutorResponse:
         return ExecutorResponse(success=False, error_message=str(e))
 
 
-@executor_agent.tool
+@ExecutorAgent.tool
 async def execute_query(ctx: RunContext[ExecutorDependencies], deps: ExecutorDependencies) -> ExecutorResponse:
     """
     Executes the SQL query and returns results.

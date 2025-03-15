@@ -21,7 +21,7 @@ class PostgreSQLWriterResponse(BaseModel):
 
 
 # Define the PostgreSQL Writer agent
-postgresql_writer_agent = Agent(
+PostgreSQLWriterAgent = Agent(
     OPENAI_MODEL,
     deps_type=PostgreSQLWriterDependencies,  # Dependencies (user request & schema)
     result_type=PostgreSQLWriterResponse,  # Structured output
@@ -48,9 +48,9 @@ postgresql_writer_agent = Agent(
 )
 
 
-@postgresql_writer_agent.tool
+@PostgreSQLWriterAgent.tool
 async def generate_query(ctx: RunContext[PostgreSQLWriterDependencies], deps: PostgreSQLWriterDependencies) -> PostgreSQLWriterResponse:
     """
     Generates a PostgreSQL query based on the user's request and database schema.
     """
-    return await postgresql_writer_agent.run(deps.user_request, deps=deps)
+    return await PostgreSQLWriterAgent.run(deps.user_request, deps=deps)

@@ -18,7 +18,7 @@ class OrchestratorResponse(BaseModel):
 
 
 # Define the orchestrator agent
-orchestrator_agent = Agent(
+OrchestratorAgent = Agent(
     OPENAI_MODEL = os.getenv("OPENAI_MODEL"),
     deps_type=str,  # User input as dependency
     result_type=OrchestratorResponse,  # Enforce structured output
@@ -42,9 +42,9 @@ orchestrator_agent = Agent(
 )
 
 
-@orchestrator_agent.tool
+@OrchestratorAgent.tool
 async def route_request(ctx: RunContext[str], user_input: str) -> OrchestratorResponse:
     """
     Routes the user's request to the appropriate agent.
     """
-    return await orchestrator_agent.run(user_input, deps=user_input)
+    return await OrchestratorAgent.run(user_input, deps=user_input)

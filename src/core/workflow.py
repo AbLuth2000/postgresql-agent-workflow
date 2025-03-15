@@ -1,10 +1,10 @@
 from langgraph.graph import StateGraph, END
 from typing import Dict, Any
-from agents.orchestrator import OrchestratorAgent
-from agents.analyst import AnalystAgent
-from agents.postgresql_writer import PostgreSQLWriterAgent
-from agents.postgresql_checker import PostgreSQLCheckerAgent
-from agents.executor import ExecutorAgent
+from src.agents.orchestrator import OrchestratorAgent
+from src.agents.analyst import AnalystAgent
+from src.agents.postgresql_writer import PostgreSQLWriterAgent
+from src.agents.postgresql_checker import PostgreSQLCheckerAgent
+from src.agents.executor import ExecutorAgent
 
 # Initialize all agents
 orchestrator = OrchestratorAgent()
