@@ -43,3 +43,7 @@ workflow.add_edge("orchestrator", handle_follow_up, condition=lambda state: stat
 
 # Set Entry Point
 workflow.set_entry_point("orchestrator")
+
+# Visualize the workflow using Mermaid syntax
+mermaid_diagram = workflow.get_graph().draw_mermaid()
+print(mermaid_diagram)
