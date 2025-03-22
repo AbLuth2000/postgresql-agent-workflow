@@ -9,6 +9,9 @@ from src.agents.postgresql_checker import validate_query
 from src.agents.executor_agent import execute_query
 from src.agents.analyst_agent import analyze_request, AnalystDependencies
 
+# Max retries to prevent looping
+MAX_RETRIES = 1
+
 # ───────────────────────────────────────────────────────────────
 # Define the shared LangGraph state
 # ───────────────────────────────────────────────────────────────
