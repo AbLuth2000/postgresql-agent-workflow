@@ -1,3 +1,4 @@
+import pprint
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Optional, List, Dict
 
@@ -6,7 +7,7 @@ from src.agents.orchestrator_agent import route_request, OrchestratorResponse
 from src.agents.postgresql_writer import generate_query
 from src.agents.postgresql_checker import validate_query
 from src.agents.executor_agent import execute_query
-from src.agents.analyst_agent import analyze_request
+from src.agents.analyst_agent import analyze_request, AnalystDependencies
 
 # ───────────────────────────────────────────────────────────────
 # Define the shared LangGraph state
@@ -56,11 +57,30 @@ def handle_executor(state: WorkflowState) -> WorkflowState:
     }
 
 def handle_analyst(state: WorkflowState) -> WorkflowState:
-    result = analyze_request({
-        "user_request": state["user_input"],
-        "query_results": state["query_results"]
-    })
+    result = analyze_request(AnalystDependencies(
+        user_request=state["user_input"]
+    ))
     return {**state, "analysis": result.dict()}
+
+# ───────────────────────────────────────────────────────────────
+# Logging for testing visibility
+# ───────────────────────────────────────────────────────────────
+
+pp = pprint.PrettyPrinter(indent=2)
+
+def log_node(name: str, fn):
+    def wrapped(state: WorkflowState) -> WorkflowState:
+        print(f"\n--- ENTERING NODE: {name.upper()} ---")
+        print("Input:")
+        pp.pprint({k: v for k, v in state.items() if v is not None})
+
+        result = fn(state)
+
+        print(f"\n--- EXITING NODE: {name.upper()} ---")
+        print("Output:")
+        pp.pprint({k: v for k, v in result.items() if v is not None})
+        return result
+    return wrapped
 
 # ───────────────────────────────────────────────────────────────
 # Build the stateful LangGraph
@@ -68,12 +88,12 @@ def handle_analyst(state: WorkflowState) -> WorkflowState:
 
 workflow = StateGraph(WorkflowState)
 
-# Register core nodes
-workflow.add_node("orchestrator", orchestrate)
-workflow.add_node("postgresql_writer", handle_writer)
-workflow.add_node("postgresql_checker", handle_checker)
-workflow.add_node("executor", handle_executor)
-workflow.add_node("analyst", handle_analyst)
+# Register core nodes with logging
+workflow.add_node("orchestrator", log_node("orchestrator", orchestrate))
+workflow.add_node("postgresql_writer", log_node("postgresql_writer", handle_writer))
+workflow.add_node("postgresql_checker", log_node("postgresql_checker", handle_checker))
+workflow.add_node("executor", log_node("executor", handle_executor))
+workflow.add_node("analyst", log_node("analyst", handle_analyst))
 
 # Define the entry point of the workflow
 workflow.add_edge(START, "orchestrator")

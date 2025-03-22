@@ -59,7 +59,7 @@ llm = ChatOpenAI(
 orchestrator_agent = (
     prompt_template
     | llm
-    | (lambda x: OrchestratorResponse.model_validate_json(x))
+    | (lambda x: OrchestratorResponse.model_validate_json(x.content))
 )
 
 # ───────────────────────────────────────────────────────────────

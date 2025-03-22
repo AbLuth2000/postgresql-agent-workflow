@@ -3,14 +3,14 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+import json
 
 # ───────────────────────────────────────────────────────────────
 # Define input dependencies and output schema
 # ───────────────────────────────────────────────────────────────
 
 class AnalystDependencies(BaseModel):
-    user_request: str  # The original user request
-    query_results: List[dict]  # The query results from the Executor Agent
+    user_request: str
 
 class AnalystResponse(BaseModel):
     insights: str = Field(description="A human-readable summary of the data.")
@@ -18,7 +18,7 @@ class AnalystResponse(BaseModel):
     next_steps: Optional[str] = Field(default=None, description="Suggested actions based on the data.")
 
 # ───────────────────────────────────────────────────────────────
-# Define system prompt template
+# Prompt template
 # ───────────────────────────────────────────────────────────────
 
 prompt_template = PromptTemplate.from_template("""
@@ -43,35 +43,46 @@ Rules:
 - Suggest next steps based on patterns in the data.
 
 User Request: {user_request}
-Query Results: {query_results}
 """)
 
 # ───────────────────────────────────────────────────────────────
-# Initialize the language model
+# LLM config
 # ───────────────────────────────────────────────────────────────
 
 load_dotenv()
 
 llm = ChatOpenAI(
-    model="gpt-4o-mini", 
+    model="gpt-4o-mini",
     temperature=0
 )
 
 # ───────────────────────────────────────────────────────────────
-# Create the analyst agent as a Runnable pipeline
+# Output parser
 # ───────────────────────────────────────────────────────────────
 
-analyst_agent = prompt_template | llm | (lambda x: AnalystResponse.model_validate_json(x))
+def parse_analyst_response(ai_message) -> AnalystResponse:
+    """
+    Parse AIMessage content into a Pydantic response object.
+    """
+    try:
+        return AnalystResponse.model_validate_json(ai_message.content)
+    except Exception:
+        return AnalystResponse(**json.loads(ai_message.content))
 
 # ───────────────────────────────────────────────────────────────
-# Wrap in a callable function for LangGraph or direct use
+# Chain pipeline
+# ───────────────────────────────────────────────────────────────
+
+analyst_agent = prompt_template | llm | parse_analyst_response
+
+# ───────────────────────────────────────────────────────────────
+# Callable function (can be used with LangGraph or directly)
 # ───────────────────────────────────────────────────────────────
 
 def analyze_request(deps: AnalystDependencies) -> AnalystResponse:
     """
-    Analyzes query results and provides insights using LangChain agent.
+    Analyzes raw query results based on a user request and returns structured insights.
     """
     return analyst_agent.invoke({
-        "user_request": deps.user_request,
-        "query_results": deps.query_results
+        "user_request": deps.user_request
     })
