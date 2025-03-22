@@ -1,5 +1,4 @@
-from langgraph.graph import StateGraph
-from langgraph.graph.state import State
+from langgraph.graph import StateGraph, START, END
 from typing import Union
 
 # Import agent logic from agents/
@@ -13,7 +12,7 @@ from src.agents.analyst_agent import analyze_request
 # Define the shared LangGraph state
 # ───────────────────────────────────────────────────────────────
 
-class WorkflowState(State):
+class WorkflowState:
     user_input: str
     decision: str
     follow_up_question: Union[str, None] = None
@@ -76,6 +75,9 @@ workflow.add_node("postgresql_checker", handle_checker)
 workflow.add_node("executor", handle_executor)
 workflow.add_node("analyst", handle_analyst)
 
+# Define the entry point of the workflow
+workflow.add_edge(START, "orchestrator")
+
 # Add routing logic based on orchestrator decision
 workflow.add_conditional_edges(
     "orchestrator",
@@ -86,7 +88,7 @@ workflow.add_conditional_edges(
         "executor": "executor",
         "analyst": "analyst",
         "follow_up": "orchestrator",
-        "complete": None  # End the workflow
+        "complete": END  # End the workflow
     }
 )
 
