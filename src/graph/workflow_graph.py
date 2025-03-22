@@ -3,11 +3,11 @@ from langgraph.graph.state import State
 from typing import Union
 
 # Import agent logic from agents/
-from agents.orchestrator_agent import route_request, OrchestratorResponse
-from agents.postgresql_writer import generate_query
-from agents.postgresql_checker import validate_query
-from agents.executor_agent import execute_query
-from agents.analyst_agent import analyze_request
+from src.agents.orchestrator_agent import route_request, OrchestratorResponse
+from src.agents.postgresql_writer import generate_query
+from src.agents.postgresql_checker import validate_query
+from src.agents.executor_agent import execute_query
+from src.agents.analyst_agent import analyze_request
 
 # ───────────────────────────────────────────────────────────────
 # Define the shared LangGraph state

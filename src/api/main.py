@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from graph.workflow_graph import app
+from src.graph.workflow_graph import app
 
 # FastAPI app instance
 fastapi_app = FastAPI(title="LangGraph Orchestrator API")
