@@ -1,9 +1,9 @@
 import os
+from dotenv import load_dotenv
 from typing import Optional
 from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain.schema import Runnable
+from langchain_openai import OpenAI
 
 # ───────────────────────────────────────────────────────────────
 # Define input and output schemas
@@ -46,14 +46,18 @@ User Input: {input}
 # Initialize the LLM
 # ───────────────────────────────────────────────────────────────
 
-OPENAI_MODEL = os.getenv("OPENAI_MODEL")
-llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
+load_dotenv()
+
+llm = OpenAI(
+    model="gpt-4o-mini", 
+    temperature=0
+)
 
 # ───────────────────────────────────────────────────────────────
 # Create runnable pipeline
 # ───────────────────────────────────────────────────────────────
 
-orchestrator_agent: Runnable = (
+orchestrator_agent = (
     prompt_template
     | llm
     | (lambda x: OrchestratorResponse.model_validate_json(x))

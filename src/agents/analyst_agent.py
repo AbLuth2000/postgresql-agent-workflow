@@ -1,9 +1,9 @@
 import os
+from dotenv import load_dotenv
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain.schema import RunnableMap
+from langchain_openai import OpenAI
 
 # ───────────────────────────────────────────────────────────────
 # Define input dependencies and output schema
@@ -51,8 +51,12 @@ Query Results: {query_results}
 # Initialize the language model
 # ───────────────────────────────────────────────────────────────
 
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
-llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
+load_dotenv()
+
+llm = OpenAI(
+    model="gpt-4o-mini", 
+    temperature=0
+)
 
 # ───────────────────────────────────────────────────────────────
 # Create the analyst agent as a Runnable pipeline
