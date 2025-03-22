@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 
 # ───────────────────────────────────────────────────────────────
 # Define input and output schemas
@@ -49,7 +49,7 @@ Database Schema: {database_schema}
 
 load_dotenv()
 
-llm = OpenAI(
+llm = ChatOpenAI(
     model="gpt-4o-mini", 
     temperature=0
 )

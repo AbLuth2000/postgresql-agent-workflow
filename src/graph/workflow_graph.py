@@ -1,5 +1,5 @@
 from langgraph.graph import StateGraph, START, END
-from typing import Union
+from typing import TypedDict, Optional, List, Dict
 
 # Import agent logic from agents/
 from src.agents.orchestrator_agent import route_request, OrchestratorResponse
@@ -12,22 +12,22 @@ from src.agents.analyst_agent import analyze_request
 # Define the shared LangGraph state
 # ───────────────────────────────────────────────────────────────
 
-class WorkflowState:
+class WorkflowState(TypedDict):
     user_input: str
-    decision: str
-    follow_up_question: Union[str, None] = None
-    sql_query: Union[str, None] = None
-    query_results: Union[list, None] = None
-    validated: Union[bool, None] = None
-    analysis: Union[dict, None] = None
-    executor_response: Union[dict, None] = None
+    decision: Optional[str] = None
+    follow_up_question: Optional[str] = None
+    sql_query: Optional[str] = None
+    query_results: Optional[List[Dict]] = None
+    validated: Optional[bool] = None
+    analysis: Optional[Dict] = None
+    executor_response: Optional[Dict] = None
 
 # ───────────────────────────────────────────────────────────────
 # Define LangGraph node functions
 # ───────────────────────────────────────────────────────────────
 
 def orchestrate(state: WorkflowState) -> WorkflowState:
-    response: OrchestratorResponse = route_request(state.user_input)
+    response: OrchestratorResponse = route_request(state["user_input"])
     return {
         **state,
         "decision": response.decision,
@@ -36,19 +36,19 @@ def orchestrate(state: WorkflowState) -> WorkflowState:
 
 def handle_writer(state: WorkflowState) -> WorkflowState:
     result = generate_query({
-        "user_request": state.user_input
+        "user_request": state["user_input"]
     })
     return {**state, "sql_query": result.sql_query}
 
 def handle_checker(state: WorkflowState) -> WorkflowState:
     result = validate_query({
-        "user_request": state.user_input,
-        "sql_query": state.sql_query
+        "user_request": state["user_input"],
+        "sql_query": state["sql_query"]
     })
     return {**state, "validated": result.is_valid}
 
 def handle_executor(state: WorkflowState) -> WorkflowState:
-    result = execute_query({"sql_query": state.sql_query})
+    result = execute_query({"sql_query": state["sql_query"]})
     return {
         **state,
         "executor_response": result.dict(),
@@ -57,8 +57,8 @@ def handle_executor(state: WorkflowState) -> WorkflowState:
 
 def handle_analyst(state: WorkflowState) -> WorkflowState:
     result = analyze_request({
-        "user_request": state.user_input,
-        "query_results": state.query_results
+        "user_request": state["user_input"],
+        "query_results": state["query_results"]
     })
     return {**state, "analysis": result.dict()}
 
