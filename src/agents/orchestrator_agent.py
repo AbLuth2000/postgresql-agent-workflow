@@ -46,7 +46,7 @@ User Input: {input}
 # Initialize the LLM
 # ───────────────────────────────────────────────────────────────
 
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
 
 # ───────────────────────────────────────────────────────────────

@@ -4,16 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 # ───────────────────────────────────────────────────────────────
-# Load DB credentials from env
-# ───────────────────────────────────────────────────────────────
-
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-
-# ───────────────────────────────────────────────────────────────
 # Define input/output schemas
 # ───────────────────────────────────────────────────────────────
 
@@ -33,6 +23,12 @@ def run_query(query: str) -> ExecutorResponse:
     """
     Executes a read-only PostgreSQL query and returns results.
     """
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT")
+    DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+
     try:
         # Disallow modifying queries
         disallowed = ["insert", "update", "delete", "drop", "alter"]
