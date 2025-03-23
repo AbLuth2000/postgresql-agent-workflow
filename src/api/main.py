@@ -32,12 +32,16 @@ def chat(request: UserRequest):
         # Run LangGraph
         result = workflow_app.invoke(state)
 
+        print(result)
+
         # Determine what type of response to return
         status = (
             "awaiting_follow_up" if result.get("decision") == "follow_up"
             else "complete" if result.get("decision") == "complete"
             else "in_progress"
         )
+
+        print(status)
 
         return {
             "session_id": session_id,
@@ -52,4 +56,6 @@ def chat(request: UserRequest):
         }
 
     except Exception as e:
+        print(state)
+        
         raise HTTPException(status_code=500, detail=str(e))

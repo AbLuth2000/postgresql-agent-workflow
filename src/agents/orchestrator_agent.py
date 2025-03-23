@@ -1,3 +1,4 @@
+import json
 from dotenv import load_dotenv
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
@@ -25,6 +26,8 @@ prompt_template = PromptTemplate.from_template("""
 You are a helpful user assistant. You handle all communication, decisions, and follow-up questions in a workflow.
 Always reply clearly, and keep track of the conversation history.
 
+User Input: {input}
+
 You can do the following:
 - Decide what the user is asking for
 - Ask follow-up questions if the request is unclear
@@ -33,15 +36,19 @@ You can do the following:
 
 If the user is continuing an ongoing conversation with the analyst, keep routing to the analyst agent unless the user changes the topic.
 
-Return one of:
+Return one of the following decisions:
 - "analyst"
 - "postgresql_writer"
 - "postgresql_checker"
 - "executor"
 - "follow_up"
 - "complete"
-
-User Input: {input}
+                                               
+Always return a structured JSON object in this format:
+{{
+    "decision": "AGENT_NAME or follow_up or complete",
+    "follow_up_question": "Only included if decision is follow_up. Otherwise, set to null."
+}}
 """)
 
 # ───────────────────────────────────────────────────────────────
@@ -52,7 +59,7 @@ load_dotenv()
 
 llm = ChatOpenAI(
     model="gpt-4o-mini", 
-    temperature=0
+    temperature=0,
 )
 
 # ───────────────────────────────────────────────────────────────
@@ -86,8 +93,17 @@ def route_request(user_input: str, message_history: Optional[List[Dict[str, str]
     # Use LangChain ChatOpenAI directly with messages
     response = llm.invoke(messages)
 
-    # Parse model response (assumed to be structured JSON)
-    parsed = OrchestratorResponse.model_validate_json(response.content)
+    print("[Raw LLM Output]")
+    print(repr(response))
+    print("[Raw content]")
+    print(repr(response.content))
 
-    return parsed
+    try:
+        # Try parsing
+        parsed_dict = json.loads(response.content)
+        return OrchestratorResponse.model_validate(parsed_dict)
+
+    except Exception as e:
+        print("[Orchestrator JSON Parse Error]", e)
+        raise ValueError("Orchestrator response is not valid JSON.")
 
