@@ -27,6 +27,7 @@ class WorkflowState(TypedDict):
     executor_response: Optional[Dict] = None
     retry_count: Optional[int]
     message_history: Optional[List[Dict[str, str]]]
+    in_analyst_mode: Optional[bool]
 
 # ───────────────────────────────────────────────────────────────
 # Define LangGraph node functions
@@ -35,28 +36,50 @@ class WorkflowState(TypedDict):
 def orchestrate(state: WorkflowState) -> WorkflowState:
     retry_count = state.get("retry_count", 0)
     history = state.get("message_history", [])
+    in_analyst_mode = state.get("in_analyst_mode", False)
 
     if retry_count >= MAX_RETRIES:
         print(f"Max retries ({MAX_RETRIES}) reached. Ending workflow.")
         return {
             **state,
             "decision": "complete",
-            "follow_up_question": "We weren’t able to process your request after several attempts. Please try again with more clarity."
+            "follow_up_question": "We weren't able to process your request after several attempts. Please try again with more clarity."
         }
-    
-    response: OrchestratorResponse = route_request(state["user_input"], history)
 
+    # Append user input to history
+    history.append({
+        "role": "user",
+        "content": state["user_input"]
+    })
+
+    # If already in analyst mode, instruct the orchestrator accordingly
+    if in_analyst_mode:
+        orchestrator_input = f"(You are currently in analyst mode)\nUser: {state['user_input']}"
+    else:
+        orchestrator_input = state["user_input"]
+
+    response: OrchestratorResponse = route_request(orchestrator_input, history)
+
+    # Append assistant response to history
     history.append({
         "role": "assistant",
         "content": response.follow_up_question or f"Decision: {response.decision}"
     })
+
+    # Handle analyst mode toggle based on decision
+    new_in_analyst_mode = in_analyst_mode
+    if response.decision == "analyst":
+        new_in_analyst_mode = True
+    elif response.decision != "analyst":
+        new_in_analyst_mode = False
 
     return {
         **state,
         "decision": response.decision,
         "follow_up_question": response.follow_up_question,
         "message_history": history,
-        "retry_count": retry_count + 1
+        "retry_count": retry_count + 1,
+        "in_analyst_mode": new_in_analyst_mode
     }
 
 def handle_writer(state: WorkflowState) -> WorkflowState:

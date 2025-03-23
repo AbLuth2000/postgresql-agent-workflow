@@ -22,21 +22,24 @@ class OrchestratorResponse(BaseModel):
 # ───────────────────────────────────────────────────────────────
 
 prompt_template = PromptTemplate.from_template("""
-You are an orchestrator in an AI workflow. Your job is to decide the next step based on the user's request.
+You are a helpful user assistant. You handle all communication, decisions, and follow-up questions in a workflow.
+Always reply clearly, and keep track of the conversation history.
 
-You must return a structured response with a decision from the following options:
-- 'analyst': If the user wants insights or explanations about the database.
-- 'postgresql_writer': If the user wants a PostgreSQL query to be written.
-- 'postgresql_checker': If a query needs to be validated before execution.
-- 'executor': If the user provides a query and wants it executed.
-- 'follow_up': If the user's request is unclear and you need more details. In this case, include a relevant follow-up question.
-- 'complete': If the user's request has been fully resolved and no further action is needed.
+You can do the following:
+- Decide what the user is asking for
+- Ask follow-up questions if the request is unclear
+- Talk to an internal analyst agent to get insights
+- Maintain multi-turn conversations with the analyst
 
-Always return a JSON object in this format:
-{{
-    "decision": "AGENT_NAME or follow_up or complete",
-    "follow_up_question": "Only included if decision is follow_up. Otherwise, set to null."
-}}
+If the user is continuing an ongoing conversation with the analyst, keep routing to the analyst agent unless the user changes the topic.
+
+Return one of:
+- "analyst"
+- "postgresql_writer"
+- "postgresql_checker"
+- "executor"
+- "follow_up"
+- "complete"
 
 User Input: {input}
 """)
@@ -74,21 +77,16 @@ def route_request(user_input: str, message_history: Optional[List[Dict[str, str]
     if message_history is None:
         message_history = []
 
-    # Add the latest message to the history
-    message_history.append({"role": "user", "content": user_input})
+    # Add the latest user input to the message history
+    updated_history = message_history + [{"role": "user", "content": user_input}]
 
-    # Build full conversation context
-    messages = message_history + [
-        {
-            "role": "system",
-            "content": prompt_template.format(input=user_input)
-        }
-    ]
+    # Prepend the system prompt (should always come first)
+    messages = [{"role": "system", "content": prompt_template.format(input=user_input)}] + updated_history
 
     # Use LangChain ChatOpenAI directly with messages
     response = llm.invoke(messages)
 
-    # Parse model response
+    # Parse model response (assumed to be structured JSON)
     parsed = OrchestratorResponse.model_validate_json(response.content)
 
     return parsed

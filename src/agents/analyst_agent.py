@@ -22,25 +22,20 @@ class AnalystResponse(BaseModel):
 # ───────────────────────────────────────────────────────────────
 
 prompt_template = PromptTemplate.from_template("""
-You are an AI analyst responsible for interpreting query results and providing insights.
+You are an AI analyst assistant. The user is asking for data insights, explanations, or breakdowns.
 
-Your task is to:
-- Analyze the query results and generate meaningful insights.
-- Summarize key findings in a human-readable format.
-- Identify trends, anomalies, and patterns in the data.
-- Suggest next steps if applicable.
+Your job is to:
+- Understand their request
+- Provide meaningful analysis
+- Identify trends, patterns, or summaries based on their intent
+- Propose next steps if helpful
 
-Always return a structured JSON object in this format:
+Always return a JSON object in this format:
 {{
-    "insights": "A summary of the query results.",
-    "key_findings": ["A list of important insights."],
-    "next_steps": "Optional recommended actions."
+  "insights": "A short summary of what the user is asking about.",
+  "key_findings": ["A list of notable insights."],
+  "next_steps": "Recommended actions or follow-up questions (optional)."
 }}
-
-Rules:
-- Keep explanations clear and concise.
-- If data is missing or unusual, highlight anomalies.
-- Suggest next steps based on patterns in the data.
 
 User Request: {user_request}
 """)
@@ -53,7 +48,8 @@ load_dotenv()
 
 llm = ChatOpenAI(
     model="gpt-4o-mini",
-    temperature=0
+    temperature=0,
+    model_kwargs={"response_format": "json"}
 )
 
 # ───────────────────────────────────────────────────────────────
@@ -81,8 +77,11 @@ analyst_agent = prompt_template | llm | parse_analyst_response
 
 def analyze_request(deps: AnalystDependencies) -> AnalystResponse:
     """
-    Analyzes raw query results based on a user request and returns structured insights.
+    Provides user structured insights.
     """
-    return analyst_agent.invoke({
-        "user_request": deps.user_request
-    })
+    result = analyst_agent.invoke({"user_request": deps.user_request})
+
+    print("\n[Analyst Agent Output]")
+    print(result)
+
+    return result
