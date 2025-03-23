@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
@@ -66,8 +66,30 @@ orchestrator_agent = (
 # Callable function to invoke the orchestrator
 # ───────────────────────────────────────────────────────────────
 
-def route_request(user_input: str) -> OrchestratorResponse:
+def route_request(user_input: str, message_history: Optional[List[Dict[str, str]]] = None) -> OrchestratorResponse:
     """
     Analyzes the user's request and routes it to the appropriate agent.
     """
-    return orchestrator_agent.invoke({"input": user_input})
+
+    if message_history is None:
+        message_history = []
+
+    # Add the latest message to the history
+    message_history.append({"role": "user", "content": user_input})
+
+    # Build full conversation context
+    messages = message_history + [
+        {
+            "role": "system",
+            "content": prompt_template.format(input=user_input)
+        }
+    ]
+
+    # Use LangChain ChatOpenAI directly with messages
+    response = llm.invoke(messages)
+
+    # Parse model response
+    parsed = OrchestratorResponse.model_validate_json(response.content)
+
+    return parsed
+

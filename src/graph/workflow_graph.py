@@ -10,7 +10,7 @@ from src.agents.executor_agent import execute_query
 from src.agents.analyst_agent import analyze_request, AnalystDependencies
 
 # Max retries to prevent looping
-MAX_RETRIES = 1
+MAX_RETRIES = 3
 
 # ───────────────────────────────────────────────────────────────
 # Define the shared LangGraph state
@@ -25,17 +25,38 @@ class WorkflowState(TypedDict):
     validated: Optional[bool] = None
     analysis: Optional[Dict] = None
     executor_response: Optional[Dict] = None
+    retry_count: Optional[int]
+    message_history: Optional[List[Dict[str, str]]]
 
 # ───────────────────────────────────────────────────────────────
 # Define LangGraph node functions
 # ───────────────────────────────────────────────────────────────
 
 def orchestrate(state: WorkflowState) -> WorkflowState:
-    response: OrchestratorResponse = route_request(state["user_input"])
+    retry_count = state.get("retry_count", 0)
+    history = state.get("message_history", [])
+
+    if retry_count >= MAX_RETRIES:
+        print(f"Max retries ({MAX_RETRIES}) reached. Ending workflow.")
+        return {
+            **state,
+            "decision": "complete",
+            "follow_up_question": "We weren’t able to process your request after several attempts. Please try again with more clarity."
+        }
+    
+    response: OrchestratorResponse = route_request(state["user_input"], history)
+
+    history.append({
+        "role": "assistant",
+        "content": response.follow_up_question or f"Decision: {response.decision}"
+    })
+
     return {
         **state,
         "decision": response.decision,
-        "follow_up_question": response.follow_up_question
+        "follow_up_question": response.follow_up_question,
+        "message_history": history,
+        "retry_count": retry_count + 1
     }
 
 def handle_writer(state: WorkflowState) -> WorkflowState:
